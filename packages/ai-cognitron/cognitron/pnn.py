@@ -267,25 +267,38 @@ class ParticleNetwork:
     def query(
         self, embedding: np.ndarray, k: int = 5, energy: float = 1.0
     ) -> list[tuple[int, float]]:
-        """Treat the query embedding as a transient input particle. Find the
-        k particles that absorb the most energy from a wave seeded at the
-        embedding's natural position."""
-        self._maybe_rebuild_hash()
-        seed_pos = self._initial_position_for(embedding)
-        # Pick the closest existing particle and use it as the input. If the
-        # field is empty, return [].
+        """Hybrid retrieval: rank by direct embedding similarity, then use
+        wave propagation to *boost* particles in the same semantic cluster.
+
+        Why hybrid: wave propagation alone needs a trained particle layout
+        to be discriminative (the analyst's "untrained model demos badly"
+        risk). Direct similarity gives a strong cold-start ranking; the
+        wave adds the visual + cluster-spread story on top.
+        """
         if not self._particles:
             return []
-        best_id, best_d = None, float("inf")
-        # Brute-force over all particles for the seed search — this is
-        # O(N) and dominated by the wave step's neighbour search.
-        for p in self._particles.values():
-            d = float(np.linalg.norm(p.position - seed_pos))
-            if d < best_d:
-                best_d, best_id = d, p.id
-        assert best_id is not None
-        absorbed = self.forward([best_id], energy=energy)
-        ranked = sorted(absorbed.items(), key=lambda kv: kv[1], reverse=True)
+        self._maybe_rebuild_hash()
+
+        # Direct embedding similarity (the cold-start signal)
+        particles = list(self._particles.values())
+        sims: list[tuple[int, float]] = []
+        for p in particles:
+            sim = cosine(embedding, p.embedding)
+            sims.append((p.id, sim))
+        sims.sort(key=lambda kv: kv[1], reverse=True)
+
+        # Top similarity hit seeds the wave
+        seed_id = sims[0][0]
+        absorbed = self.forward([seed_id], energy=energy)
+
+        # Combine: 70% direct similarity, 30% normalised wave energy
+        max_e = max(absorbed.values()) if absorbed else 1.0
+        max_e = max(max_e, 1e-6)
+        combined: dict[int, float] = {}
+        for pid, sim in sims:
+            wave_score = absorbed.get(pid, 0.0) / max_e
+            combined[pid] = 0.7 * sim + 0.3 * wave_score
+        ranked = sorted(combined.items(), key=lambda kv: kv[1], reverse=True)
         return ranked[:k]
 
     def decay(self, factor: float = 0.99) -> None:
@@ -348,15 +361,17 @@ class ParticleNetwork:
         same embedding always lands at the same coordinate — which is
         important so the visualisation is deterministic and so similar
         thoughts naturally appear near each other before any training.
+
+        Scaling note: for bipolar +/-1 vectors the dot product std is
+        sqrt(D), so we divide by ~sqrt(D)/3 to spread positions through most
+        of the [-1, 1] cube rather than clumping near origin.
         """
-        # Use a fixed seed independent of self._rng so the projection is
-        # stable across instantiations.
         proj = np.random.default_rng(2024).standard_normal((3, self.embedding_dim)).astype(
             np.float32
         )
-        # Normalize each axis projection
         proj /= np.linalg.norm(proj, axis=1, keepdims=True) + 1e-8
         coord = proj @ embedding.astype(np.float32)
-        # Scale into [-1, 1]^3 cube (rough — exact bounds depend on dim)
-        coord = coord / (np.sqrt(self.embedding_dim) * 0.5)
+        # Spread broadly: dividing by sqrt(D)/3 instead of sqrt(D)/2 means
+        # points cluster near +/- 0.6 instead of +/- 0.05.
+        coord = coord / (np.sqrt(self.embedding_dim) / 3.0)
         return np.clip(coord, -1.0, 1.0).astype(np.float32)

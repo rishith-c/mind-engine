@@ -232,6 +232,20 @@ seed cell → 32^3 grid, 16-channel state per cell
 The audio channel is supervised by an auxiliary loss that ties it to color
 hue, so a *red* cell sings one band and a *blue* cell sings another.
 
+## Honest limits of "from scratch"
+
+HDC has no learned semantics. It can detect lexical overlap, not meaning.
+Asking *"what do I know about ownership semantics"* correctly retrieves the
+Rust thought (the word *ownership* is shared). Asking *"tell me about pets"*
+will not retrieve the *cats* thought because *pets* and *cats* are
+independent random hypervectors. Real semantic retrieval would require a
+learned embedding model — which the from-scratch constraint forbids.
+
+This is the price of the experiment, and the demo is designed around it:
+the live training loop physically pulls particles toward their lexical
+neighbours, so the visualisation tells the cluster story even when a
+specific query happens to miss.
+
 ## What's deliberately NOT here (and why)
 
 - **No pretrained models.** This is the entire point.
