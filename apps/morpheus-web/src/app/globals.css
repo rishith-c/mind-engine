@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 200 30% 4%;
+    --foreground: 195 30% 96%;
+    --primary: 195 90% 65%;
+    --primary-foreground: 195 30% 5%;
+    --muted: 200 30% 10%;
+    --muted-foreground: 195 15% 65%;
+    --border: 200 30% 14%;
+    --input: 200 30% 14%;
+    --ring: 195 90% 65%;
+  }
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground antialiased; }
+  html, body, #__next { height: 100%; overflow: hidden; }
+}
+
+@layer utilities {
+  .glass {
+    background: rgba(8, 22, 32, 0.55);
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .glow-text { text-shadow: 0 0 20px rgba(80, 200, 255, 0.5); }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "mind-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Two from-scratch original AI systems: Cognitron (Particle Neural Network) and Morpheus (3D Synesthetic Neural Cellular Automaton)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "dev:cognitron": "turbo run dev --filter=cognitron-web",
+    "dev:morpheus": "turbo run dev --filter=morpheus-web"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "typescript": "^5.6.3",
+    "prettier": "^3.3.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.12.0"
+}

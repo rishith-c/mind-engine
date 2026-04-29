@@ -1,0 +1,21 @@
+[project]
+name = "ai-cognitron"
+version = "0.1.0"
+description = "Cognitron — from-scratch Particle Neural Network with Hyperdimensional Computing encoder"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=2.1",
+    "scipy>=1.14",
+    "torch>=2.5",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.3", "ruff>=0.7"]
+api = ["fastapi>=0.115", "uvicorn>=0.32", "pydantic>=2.9", "supabase>=2.10"]
+
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["cognitron"]

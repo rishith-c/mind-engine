@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.env.local
+.env.*.local
+
+# Build
+.next/
+.turbo/
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Models / weights / large artifacts
+*.pt
+*.pth
+*.onnx
+*.safetensors
+*.bin
+*.ckpt
+weights/
+checkpoints/
+data/raw/
+data/processed/
+*.npy
+*.npz
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Supabase
+.supabase/
