@@ -3,26 +3,12 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Brain,
-  Zap,
-  Sparkles,
-  Play,
-  RotateCcw,
-  Activity,
-} from "lucide-react";
+import { ArrowRight, Plus, Sparkles, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
@@ -33,41 +19,29 @@ import {
 
 import { useCognitronStore } from "@/lib/store";
 
-// React Three Fiber + drei must be client-only. SSR will hit
-// "ReactCurrentOwner of undefined" because R3F reads React internals.
 const ParticleField = dynamic(
   () => import("@/components/particle-field").then((m) => m.ParticleField),
   { ssr: false, loading: () => <div className="h-full w-full" /> },
 );
 
-// Motion presets — keep everything physical, never bouncy.
 const fadeUp = {
-  initial: { opacity: 0, y: 16, filter: "blur(8px)" },
-  animate: { opacity: 1, y: 0, filter: "blur(0px)" },
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
   transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
 };
 
-const listContainer = {
+const list = {
   hidden: {},
-  show: {
-    transition: { staggerChildren: 0.06, delayChildren: 0.04 },
-  },
+  show: { transition: { staggerChildren: 0.04, delayChildren: 0.06 } },
 };
 
-const listItem = {
-  hidden: { opacity: 0, y: 8, filter: "blur(4px)" },
+const listRow = {
+  hidden: { opacity: 0, x: -4 },
   show: {
     opacity: 1,
-    y: 0,
-    filter: "blur(0px)",
-    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as const },
+    x: 0,
+    transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] as const },
   },
-};
-
-const buttonPress = {
-  whileHover: { scale: 1.02 },
-  whileTap: { scale: 0.97 },
-  transition: { type: "spring" as const, stiffness: 400, damping: 28 },
 };
 
 export default function CognitronPage() {
@@ -107,337 +81,288 @@ export default function CognitronPage() {
   return (
     <TooltipProvider delayDuration={250}>
       <main className="relative h-screen w-screen overflow-hidden bg-background">
-        {/* Aurora ambient background — sits beneath the particle galaxy */}
-        <div className="aurora pointer-events-none absolute inset-0 z-0 opacity-60" />
-
-        {/* 3D particle galaxy */}
+        {/* Background layers — graph paper grid + the particle field */}
+        <div className="graph-grid pointer-events-none absolute inset-0 z-0" />
+        <div className="accent-glow pointer-events-none absolute inset-0 z-0" />
         <div className="absolute inset-0 z-0">
           <ParticleField />
         </div>
 
-        {/* Top vignette so the hero text reads cleanly over the galaxy */}
+        {/* Top + bottom vignettes for legibility */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 z-10 h-64 bg-gradient-to-b from-background/70 via-background/20 to-transparent"
+          className="pointer-events-none absolute inset-x-0 top-0 z-10 h-44 bg-gradient-to-b from-background via-background/40 to-transparent"
         />
-
-        {/* Bottom vignette for the caption */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-40 bg-gradient-to-t from-background/80 via-background/20 to-transparent"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-32 bg-gradient-to-t from-background to-transparent"
         />
 
-        {/* ───────────────────────── HERO ───────────────────────── */}
+        {/* ─────────────────── Top bar — instrument header ─────────────────── */}
         <motion.header
           {...fadeUp}
-          className="pointer-events-none absolute left-1/2 top-10 z-20 -translate-x-1/2 text-center"
+          className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between px-8 py-6"
         >
-          <div className="mb-3 flex items-center justify-center gap-2">
-            <Badge
-              variant="outline"
-              className="glass border-white/10 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground"
-            >
-              <Sparkles className="mr-1.5 h-3 w-3 text-accent" />
-              Particle Neural Network · live
-            </Badge>
-          </div>
-
-          <h1 className="glow-text flex items-center justify-center gap-3 text-5xl font-semibold tracking-tight md:text-6xl">
-            <Brain className="h-10 w-10 text-primary drop-shadow-[0_0_20px_hsl(var(--primary)/0.6)]" />
-            <span className="bg-gradient-to-br from-white via-white to-white/60 bg-clip-text text-transparent">
-              Cognitron
+          <div className="flex items-center gap-3">
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_8px_hsl(var(--accent))]" />
+            <span className="mono micro tabular text-foreground/70">
+              cognitron / pnn-001
             </span>
-          </h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-3 text-sm text-muted-foreground/90"
-          >
-            A neural substrate built from particles. No transformers. No pretraining.
-            Just attraction and resonance.
-          </motion.p>
+          </div>
+          <div className="flex items-center gap-6 mono text-[11px] text-foreground/60 tabular">
+            <span>
+              <span className="micro mr-2">particles</span>
+              {String(particleCount).padStart(4, "0")}
+            </span>
+            <span className="hidden md:inline">
+              <span className="micro mr-2">loss</span>
+              {lossDisplay}
+            </span>
+            <span className="hidden md:inline">
+              <span className="micro mr-2">freq</span>
+              2.5 hz
+            </span>
+          </div>
         </motion.header>
 
-        {/* ─────────────────── LEFT: DROP A THOUGHT ─────────────────── */}
-        <motion.div
+        {/* ─────────────────── Centered editorial hero ─────────────────── */}
+        <motion.section
           {...fadeUp}
-          transition={{ ...fadeUp.transition, delay: 0.15 }}
-          className="pointer-events-auto absolute left-6 top-44 z-20 w-[22rem]"
+          transition={{ ...fadeUp.transition, delay: 0.1 }}
+          className="pointer-events-none absolute left-1/2 top-[14%] z-20 -translate-x-1/2 text-center"
         >
-          <Card className="glass gradient-border overflow-hidden border-white/5 bg-transparent shadow-2xl">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-sm font-medium text-foreground/90">
-                  <Sparkles className="h-4 w-4 text-accent" />
-                  Drop a Thought
-                </CardTitle>
+          <div className="mono micro mb-4 flex items-center justify-center gap-2 text-foreground/55">
+            <span className="h-px w-8 bg-foreground/20" />
+            particle neural network · live
+            <span className="h-px w-8 bg-foreground/20" />
+          </div>
+
+          <h1 className="display text-7xl leading-none tracking-tight md:text-8xl">
+            Cognitron
+          </h1>
+
+          <p className="mx-auto mt-6 max-w-md text-balance text-[13px] leading-relaxed text-foreground/65">
+            A neural substrate of free particles in continuous space. Topology
+            emerges from semantic gravity. Inference is a wave.
+          </p>
+        </motion.section>
+
+        {/* ─────────────────── Lower-left: capture (instrument panel) ─────────────────── */}
+        <motion.aside
+          {...fadeUp}
+          transition={{ ...fadeUp.transition, delay: 0.2 }}
+          className="pointer-events-auto absolute bottom-10 left-8 z-20 w-[20rem]"
+        >
+          <div className="surface rounded-md">
+            <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-3 w-3 text-foreground/60" />
+                <span className="mono micro text-foreground/75">
+                  capture · 01
+                </span>
+              </div>
+              <span className="mono micro text-foreground/40">input</span>
+            </div>
+
+            <div className="space-y-3 p-4">
+              <Input
+                placeholder="A thought..."
+                value={thought}
+                onChange={(e) => setThought(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void handleAdd();
+                }}
+                disabled={busy}
+                className="mono h-9 rounded-sm border-border/60 bg-transparent text-[13px] placeholder:text-foreground/30 focus-visible:ring-1 focus-visible:ring-accent/60"
+              />
+
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  size="sm"
+                  onClick={handleAdd}
+                  disabled={busy || !thought.trim()}
+                  className="mono col-span-1 h-8 rounded-sm bg-foreground text-background text-[11px] tracking-wider hover:bg-foreground/90"
+                >
+                  <Plus className="h-3 w-3" /> add
+                </Button>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge
-                      variant="secondary"
-                      className="cursor-default border-white/5 bg-white/5 text-[10px] font-mono tabular-nums text-muted-foreground"
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => trainBurst(3)}
+                      disabled={busy}
+                      className="mono h-8 rounded-sm border-border/60 bg-transparent text-[11px] tracking-wider text-foreground/70 hover:bg-foreground/5"
                     >
-                      <Activity className="mr-1 h-2.5 w-2.5 text-accent" />
-                      live
-                    </Badge>
+                      train ×3
+                    </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="left" className="text-xs">
-                    Field auto-refreshes every 2.5s
+                  <TooltipContent
+                    side="top"
+                    className="mono text-[10px] tracking-wider"
+                  >
+                    Run 3 PGD epochs
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={reset}
+                      disabled={busy}
+                      className="mono h-8 rounded-sm border-border/60 bg-transparent text-[11px] tracking-wider text-foreground/70 hover:bg-foreground/5"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="mono text-[10px]">
+                    Clear field
                   </TooltipContent>
                 </Tooltip>
               </div>
-            </CardHeader>
+            </div>
 
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Input
-                  placeholder="A thought, fact, or idea..."
-                  value={thought}
-                  onChange={(e) => setThought(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") void handleAdd();
-                  }}
-                  disabled={busy}
-                  className="border-white/10 bg-white/[0.04] placeholder:text-muted-foreground/60 focus-visible:ring-primary/40"
-                />
+            <Separator className="bg-border/40" />
 
-                <div className="flex gap-2">
-                  <motion.div className="flex-1" {...buttonPress}>
-                    <Button
-                      onClick={() => void handleAdd()}
-                      disabled={busy || !thought.trim()}
-                      className="w-full bg-primary text-primary-foreground shadow-[0_0_24px_-8px_hsl(var(--primary)/0.8)] hover:bg-primary/90"
-                      size="sm"
-                    >
-                      <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                      Add particle
-                    </Button>
-                  </motion.div>
+            <div className="grid grid-cols-2 divide-x divide-border/40">
+              <Stat label="particles" value={particleCount} loading={!field} />
+              <Stat label="last loss" value={lossDisplay} loading={false} mono />
+            </div>
+          </div>
+        </motion.aside>
 
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <motion.div {...buttonPress}>
-                        <Button
-                          onClick={() => void trainBurst(3)}
-                          disabled={busy}
-                          variant="ghost"
-                          size="sm"
-                          className="border border-white/10 bg-white/[0.03] hover:bg-white/[0.08]"
-                        >
-                          <Play className="h-3.5 w-3.5 text-accent" />
-                        </Button>
-                      </motion.div>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="text-xs">
-                      Run 3 training epochs
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <motion.div {...buttonPress}>
-                        <Button
-                          onClick={() => void reset()}
-                          disabled={busy}
-                          variant="ghost"
-                          size="sm"
-                          className="border border-white/10 bg-white/[0.03] text-muted-foreground hover:bg-destructive/20 hover:text-destructive-foreground"
-                        >
-                          <RotateCcw className="h-3.5 w-3.5" />
-                        </Button>
-                      </motion.div>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="text-xs">
-                      Reset the field
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              </div>
-
-              <Separator className="bg-white/5" />
-
-              {/* Stat row — tabular numerics */}
-              <div className="grid grid-cols-2 gap-3">
-                <Stat
-                  label="Particles"
-                  value={
-                    field === null ? (
-                      <Skeleton className="h-5 w-10 bg-white/10" />
-                    ) : (
-                      <span className="text-base font-semibold tabular-nums text-foreground">
-                        {particleCount.toLocaleString()}
-                      </span>
-                    )
-                  }
-                />
-                <Stat
-                  label="Last loss"
-                  value={
-                    <span
-                      className={`text-base font-semibold tabular-nums ${
-                        loss === null ? "text-muted-foreground/50" : "text-accent"
-                      }`}
-                    >
-                      {lossDisplay}
-                    </span>
-                  }
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* ─────────────────── RIGHT: WAVE QUERY ─────────────────── */}
-        <motion.div
+        {/* ─────────────────── Lower-right: query (instrument panel) ─────────────────── */}
+        <motion.aside
           {...fadeUp}
-          transition={{ ...fadeUp.transition, delay: 0.25 }}
-          className="pointer-events-auto absolute right-6 top-44 z-20 w-[24rem]"
+          transition={{ ...fadeUp.transition, delay: 0.3 }}
+          className="pointer-events-auto absolute bottom-10 right-8 z-20 w-[24rem]"
         >
-          <Card className="glass gradient-border overflow-hidden border-white/5 bg-transparent shadow-2xl">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm font-medium text-foreground/90">
-                <Zap className="h-4 w-4 text-primary" />
-                Wave-Propagation Query
-              </CardTitle>
-            </CardHeader>
+          <div className="surface rounded-md">
+            <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <ArrowRight className="h-3 w-3 text-foreground/60" />
+                <span className="mono micro text-foreground/75">
+                  query · wave-propagation
+                </span>
+              </div>
+              <span className="mono micro text-foreground/40">k=5</span>
+            </div>
 
-            <CardContent className="space-y-3">
+            <div className="space-y-3 p-4">
               <div className="flex gap-2">
                 <Input
-                  placeholder="Ask the field something..."
+                  placeholder="ask the field..."
                   value={queryText}
                   onChange={(e) => setQueryText(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") void handleAsk();
                   }}
                   disabled={busy}
-                  className="border-white/10 bg-white/[0.04] placeholder:text-muted-foreground/60 focus-visible:ring-accent/40"
+                  className="mono h-9 rounded-sm border-border/60 bg-transparent text-[13px] placeholder:text-foreground/30 focus-visible:ring-1 focus-visible:ring-accent/60"
                 />
-                <motion.div {...buttonPress}>
-                  <Button
-                    onClick={() => void handleAsk()}
-                    disabled={busy || !queryText.trim()}
-                    size="sm"
-                    className="bg-accent text-accent-foreground shadow-[0_0_24px_-8px_hsl(var(--accent)/0.8)] hover:bg-accent/90"
-                  >
-                    <Zap className="mr-1.5 h-3.5 w-3.5" />
-                    Fire
-                  </Button>
-                </motion.div>
+                <Button
+                  size="sm"
+                  onClick={handleAsk}
+                  disabled={busy || !queryText.trim()}
+                  className="mono h-9 rounded-sm bg-accent px-4 text-[11px] tracking-wider text-accent-foreground hover:bg-accent/90"
+                >
+                  fire
+                </Button>
               </div>
 
-              <Separator className="bg-white/5" />
-
-              {/* Hit list */}
-              <div className="min-h-[12rem]">
-                {busy && hits.length === 0 ? (
-                  <div className="space-y-2">
-                    {[0, 1, 2].map((i) => (
-                      <Skeleton key={i} className="h-12 w-full bg-white/[0.04]" />
-                    ))}
-                  </div>
-                ) : hits.length === 0 ? (
-                  <EmptyHits />
-                ) : (
-                  <ScrollArea className="h-[18rem] pr-3">
+              <ScrollArea className="h-[14rem]">
+                <AnimatePresence mode="popLayout">
+                  {hits.length === 0 ? (
+                    <motion.div
+                      key="empty"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex h-[12rem] flex-col items-center justify-center gap-2 text-center"
+                    >
+                      <span className="mono micro text-foreground/40">
+                        — awaiting query —
+                      </span>
+                      <span className="text-[11px] text-foreground/40">
+                        a wave seeded at the most-similar particle propagates
+                        for 5 hops; resonance ranks by absorbed energy.
+                      </span>
+                    </motion.div>
+                  ) : (
                     <motion.ol
-                      key={hits.map((h) => h.id).join(",")}
-                      variants={listContainer}
+                      key="hits"
+                      variants={list}
                       initial="hidden"
                       animate="show"
-                      className="space-y-2"
+                      className="space-y-1"
                     >
-                      <AnimatePresence initial={false}>
-                        {hits.map((h, idx) => (
-                          <motion.li
-                            key={`${h.id}-${idx}`}
-                            variants={listItem}
-                            layout
-                            whileHover={{
-                              y: -1,
-                              transition: { duration: 0.15 },
-                            }}
-                            className="group relative flex items-start gap-3 rounded-lg border border-white/5 bg-white/[0.03] p-3 transition-colors hover:border-white/10 hover:bg-white/[0.06]"
-                          >
-                            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-[10px] font-mono tabular-nums text-muted-foreground">
-                              {idx + 1}
-                            </div>
-
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-xs leading-relaxed text-foreground/90">
-                                {h.text}
-                              </p>
-                              <p className="mt-1 text-[10px] text-muted-foreground/70">
-                                particle #{h.id}
-                              </p>
-                            </div>
-
-                            <Badge
-                              variant="outline"
-                              className="shrink-0 border-primary/30 bg-primary/10 font-mono text-[10px] tabular-nums text-primary"
-                            >
-                              {h.score.toFixed(3)}
-                            </Badge>
-                          </motion.li>
-                        ))}
-                      </AnimatePresence>
+                      {hits.map((h, i) => (
+                        <motion.li
+                          key={h.id}
+                          variants={listRow}
+                          layout
+                          className="group flex items-baseline gap-3 border-b border-border/30 py-2 last:border-b-0"
+                        >
+                          <span className="mono w-5 text-[10px] text-foreground/40 tabular">
+                            {String(i + 1).padStart(2, "0")}
+                          </span>
+                          <span className="flex-1 text-[12px] leading-snug text-foreground/85">
+                            {h.text}
+                          </span>
+                          <span className="mono w-12 shrink-0 text-right text-[11px] text-accent tabular">
+                            {h.score.toFixed(3)}
+                          </span>
+                        </motion.li>
+                      ))}
                     </motion.ol>
-                  </ScrollArea>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+                  )}
+                </AnimatePresence>
+              </ScrollArea>
+            </div>
+          </div>
+        </motion.aside>
 
-        {/* ───────────────────── FOOTER CAPTION ───────────────────── */}
-        <motion.div
+        {/* ─────────────────── Footer caption ─────────────────── */}
+        <motion.footer
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.8 }}
-          className="pointer-events-none absolute bottom-6 left-1/2 z-20 -translate-x-1/2 text-center"
+          className="pointer-events-none absolute inset-x-0 bottom-3 z-20 text-center"
         >
-          <p className="mx-auto max-w-2xl text-[11px] leading-relaxed text-muted-foreground/70">
-            Particles attract by semantic similarity. Wave queries propagate through
-            the field, lighting up resonant memory.
-            <span className="mx-2 text-muted-foreground/30">·</span>
-            <span className="font-mono tabular-nums">no pretrained model in sight</span>
+          <p className="mono micro text-foreground/35">
+            no transformers · no pretraining · 100% from-scratch hyperdimensional computing
           </p>
-        </motion.div>
+        </motion.footer>
       </main>
     </TooltipProvider>
   );
 }
 
-/* ─────────────────────── helpers ─────────────────────── */
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface StatProps {
   label: string;
-  value: React.ReactNode;
+  value: number | string;
+  loading: boolean;
+  mono?: boolean;
 }
 
-function Stat({ label, value }: StatProps) {
+function Stat({ label, value, loading, mono = false }: StatProps) {
   return (
-    <div className="rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2 transition-colors hover:bg-white/[0.04]">
-      <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
-        {label}
-      </div>
-      <div className="mt-0.5">{value}</div>
-    </div>
-  );
-}
-
-function EmptyHits() {
-  return (
-    <div className="flex h-[12rem] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/5 bg-white/[0.01] text-center">
-      <Zap className="h-5 w-5 text-muted-foreground/40" />
-      <p className="text-xs text-muted-foreground/60">
-        Fire a query to ripple through the field
-      </p>
-      <p className="text-[10px] text-muted-foreground/40">
-        Top-5 resonant particles will surface here
-      </p>
+    <div className="px-4 py-3">
+      <div className="mono micro mb-1 text-foreground/45">{label}</div>
+      {loading ? (
+        <Skeleton className="h-4 w-12 rounded-none bg-foreground/10" />
+      ) : (
+        <div
+          className={`tabular text-[15px] text-foreground/90 ${
+            mono ? "mono" : "display text-[20px] leading-none"
+          }`}
+        >
+          {typeof value === "number" ? value.toLocaleString() : value}
+        </div>
+      )}
     </div>
   );
 }

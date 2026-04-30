@@ -3,46 +3,47 @@
 @tailwind utilities;
 
 /*
- * Cognitron design tokens.
- * Dark-first, deep violet primary, plasma magenta accent. All shadcn tokens
- * present so the canonical components don't reach into undefined CSS vars.
+ * Cognitron — Editorial Scientific Instrument aesthetic.
+ *
+ * True black canvas. Hairline borders. Restrained palette: paper white,
+ * graphite, with a single oxide-cyan accent. The particle field is the
+ * artwork — the chrome stays out of its way.
+ *
+ * Typography: Instrument Serif (italic display) + JetBrains Mono (UI/stats)
+ * loaded from next/font/google.
  */
 
 @layer base {
   :root {
-    --background: 232 30% 4%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 3%;
+    --foreground: 40 10% 96%;
 
-    --card: 232 30% 6%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 5%;
+    --card-foreground: 40 10% 96%;
 
-    --popover: 232 30% 7%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 40 10% 96%;
 
-    --primary: 282 88% 64%;
-    --primary-foreground: 232 30% 4%;
+    --primary: 40 10% 96%;
+    --primary-foreground: 0 0% 6%;
 
-    --secondary: 232 22% 11%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 40 10% 96%;
 
-    --muted: 232 22% 10%;
-    --muted-foreground: 215 18% 65%;
+    --muted: 0 0% 8%;
+    --muted-foreground: 40 6% 56%;
 
-    --accent: 196 90% 60%;
-    --accent-foreground: 232 30% 4%;
+    --accent: 188 80% 64%;
+    --accent-foreground: 0 0% 6%;
 
-    --destructive: 0 80% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 8 78% 56%;
+    --destructive-foreground: 40 10% 96%;
 
-    --border: 232 30% 14%;
-    --input: 232 30% 14%;
-    --ring: 282 88% 64%;
+    --border: 40 8% 18% / 0.4;
+    --input: 40 8% 16%;
+    --ring: 188 80% 64%;
 
-    --radius: 0.75rem;
-
-    --aurora-1: 282 88% 64%;
-    --aurora-2: 196 90% 60%;
-    --aurora-3: 322 84% 64%;
+    --radius: 0.25rem;
   }
 
   * {
@@ -50,8 +51,8 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased selection:bg-primary/30 selection:text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1, "cv02" 1, "cv11" 1;
+    @apply bg-background text-foreground antialiased selection:bg-foreground/15;
+    font-feature-settings: "ss01" 1, "ss02" 1, "ss03" 1, "cv11" 1, "calt" 1;
   }
 
   html, body {
@@ -59,113 +60,89 @@
     overflow: hidden;
   }
 
-  /* Hide scrollbars on Webkit, keep functional */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 4px;
+    height: 4px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
-    border-radius: 3px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground));
+    background: hsl(40 8% 18% / 0.6);
+    border-radius: 0;
   }
 }
 
 @layer utilities {
-  /* Liquid glass — modern translucent surface with chromatic edge */
-  .glass {
+  /* Surface — low-emission glass; almost just darker paper */
+  .surface {
+    background: hsl(0 0% 6% / 0.78);
+    backdrop-filter: blur(28px) saturate(140%);
+    -webkit-backdrop-filter: blur(28px) saturate(140%);
+    border: 1px solid hsl(40 8% 22% / 0.45);
+  }
+
+  /* A single hairline rule, paper-edition style */
+  .hairline {
     background: linear-gradient(
-      135deg,
-      hsl(232 28% 9% / 0.72) 0%,
-      hsl(232 28% 6% / 0.62) 100%
+      to right,
+      transparent,
+      hsl(40 8% 28% / 0.6),
+      transparent
     );
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid hsl(0 0% 100% / 0.08);
-    box-shadow:
-      inset 0 1px 0 hsl(0 0% 100% / 0.06),
-      0 24px 48px -16px hsl(232 30% 0% / 0.6),
-      0 0 0 1px hsl(0 0% 100% / 0.02);
+    height: 1px;
   }
 
-  .glass-strong {
-    background: linear-gradient(
-      135deg,
-      hsl(232 28% 11% / 0.85) 0%,
-      hsl(232 28% 7% / 0.75) 100%
-    );
-    backdrop-filter: blur(28px) saturate(200%);
-    -webkit-backdrop-filter: blur(28px) saturate(200%);
-    border: 1px solid hsl(0 0% 100% / 0.10);
-    box-shadow:
-      inset 0 1px 0 hsl(0 0% 100% / 0.08),
-      0 32px 64px -20px hsl(232 30% 0% / 0.8);
+  /* Editorial display family */
+  .display {
+    font-family: var(--font-display, "Instrument Serif"), Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: -0.02em;
   }
 
-  /* Animated gradient border (advanced — uses background-clip + conic gradient) */
-  .gradient-border {
-    position: relative;
-    background-clip: padding-box;
-    border: 1px solid transparent;
-  }
-  .gradient-border::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    margin: -1px;
-    border-radius: inherit;
-    background: conic-gradient(
-      from var(--angle, 0deg),
-      hsl(var(--aurora-1) / 0.6),
-      hsl(var(--aurora-2) / 0.6),
-      hsl(var(--aurora-3) / 0.6),
-      hsl(var(--aurora-1) / 0.6)
-    );
-    animation: rotate-border 8s linear infinite;
+  .mono {
+    font-family: var(--font-mono, "JetBrains Mono"), ui-monospace, monospace;
   }
 
-  @property --angle {
-    syntax: "<angle>";
-    initial-value: 0deg;
-    inherits: false;
-  }
-  @keyframes rotate-border {
-    to {
-      --angle: 360deg;
-    }
-  }
-
-  /* Glow text (used for hero) */
-  .glow-text {
-    text-shadow:
-      0 0 24px hsl(var(--aurora-1) / 0.4),
-      0 0 64px hsl(var(--aurora-1) / 0.2);
-  }
-
-  /* Aurora ambient glow behind hero */
-  .aurora {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background:
-      radial-gradient(60% 40% at 20% 0%, hsl(var(--aurora-1) / 0.18) 0%, transparent 70%),
-      radial-gradient(50% 35% at 80% 10%, hsl(var(--aurora-2) / 0.14) 0%, transparent 70%),
-      radial-gradient(40% 30% at 50% 100%, hsl(var(--aurora-3) / 0.10) 0%, transparent 70%);
-    mix-blend-mode: screen;
-  }
-
-  .text-balance {
-    text-wrap: balance;
-  }
-
-  /* Tabular numerics for stat displays */
   .tabular {
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Subtle off-axis grid; not a backdrop, more like graph paper */
+  .graph-grid {
+    background-image:
+      linear-gradient(to right, hsl(40 8% 28% / 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(40 8% 28% / 0.04) 1px, transparent 1px);
+    background-size: 64px 64px;
+    background-position: -1px -1px;
+  }
+
+  /* Single accent halo behind the particle field — not a flood */
+  .accent-glow {
+    background: radial-gradient(
+      55% 40% at 50% 50%,
+      hsl(188 80% 64% / 0.06) 0%,
+      transparent 70%
+    );
+  }
+
+  /* Crosshair tick marks for stat blocks */
+  .tick::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 1px;
+    background: hsl(40 8% 56% / 0.6);
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  /* Uppercase micro-label */
+  .micro {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: hsl(40 6% 56%);
   }
 }

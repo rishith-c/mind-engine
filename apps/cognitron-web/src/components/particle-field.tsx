@@ -25,16 +25,18 @@ function ParticleInstances() {
     if (!field) return new Float32Array(0);
     const cols = new Float32Array(field.n * 3);
     for (let i = 0; i < field.n; i++) {
-      // Excitatory = magenta-ish, inhibitory = cyan-ish
+      // Editorial palette: paper white for excitatory, oxide cyan for
+      // inhibitory. Restrained on purpose — the field reads as a
+      // scientific instrument, not a discotheque.
       const pol = field.polarities[i];
       if (pol > 0) {
-        cols[3 * i] = 0.8;
-        cols[3 * i + 1] = 0.3;
-        cols[3 * i + 2] = 1.0;
+        cols[3 * i] = 0.92;
+        cols[3 * i + 1] = 0.93;
+        cols[3 * i + 2] = 0.96;
       } else {
-        cols[3 * i] = 0.3;
-        cols[3 * i + 1] = 0.9;
-        cols[3 * i + 2] = 1.0;
+        cols[3 * i] = 0.45;
+        cols[3 * i + 1] = 0.85;
+        cols[3 * i + 2] = 0.92;
       }
     }
     return cols;
@@ -57,7 +59,8 @@ function ParticleInstances() {
       const g = baseColors[3 * i + 1];
       const b = baseColors[3 * i + 2];
       if (isHi) {
-        tmpColor.setRGB(1.0, 0.95, 0.5);
+        // Highlighted hits glow accent cyan — the only accent color used
+        tmpColor.setRGB(0.55, 0.95, 1.0);
       } else {
         tmpColor.setRGB(r, g, b);
       }
@@ -139,7 +142,7 @@ function ConnectionLines() {
               ]}
             />
           </bufferGeometry>
-          <lineBasicMaterial color="#ffd966" transparent opacity={0.6} />
+          <lineBasicMaterial color="#80e8f7" transparent opacity={0.4} />
         </line>
       ))}
     </group>
@@ -149,19 +152,27 @@ function ConnectionLines() {
 export function ParticleField() {
   return (
     <Canvas
-      camera={{ position: [2.4, 1.4, 2.4], fov: 55 }}
-      style={{ background: "radial-gradient(circle at 50% 40%, #1a0c2e 0%, #05030a 80%)" }}
+      camera={{ position: [2.6, 1.6, 2.6], fov: 50 }}
+      style={{ background: "transparent" }}
     >
-      <ambientLight intensity={0.4} />
-      <Stars radius={20} depth={50} count={1500} factor={3} fade />
+      <ambientLight intensity={0.5} />
+      <Stars
+        radius={28}
+        depth={60}
+        count={1200}
+        factor={2.2}
+        saturation={0}
+        fade
+        speed={0.4}
+      />
       <ParticleInstances />
       <ConnectionLines />
       <OrbitControls
         enablePan={false}
         autoRotate
-        autoRotateSpeed={0.4}
-        minDistance={1.5}
-        maxDistance={6}
+        autoRotateSpeed={0.25}
+        minDistance={1.8}
+        maxDistance={7}
       />
     </Canvas>
   );
