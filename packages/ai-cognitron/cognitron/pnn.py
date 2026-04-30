@@ -353,25 +353,62 @@ class ParticleNetwork:
             self._hash.rebuild(list(self._particles.values()))
             self._hash_dirty = False
 
+    # Cached projection matrix — computed once per process. Sparse ternary
+    # (Achlioptas-style) entries in {-1, 0, +1} preserve cosine distances
+    # better than dense Gaussian projection of bipolar inputs.
+    _proj_matrix: np.ndarray | None = None
+
+    @classmethod
+    def _projection(cls, dim: int) -> np.ndarray:
+        if cls._proj_matrix is None or cls._proj_matrix.shape[1] != dim:
+            rng = np.random.default_rng(2024)
+            # Sparse ternary projection: each entry is +1 / -1 with prob 1/6,
+            # 0 with prob 2/3. Sqrt(3) scaling keeps unit variance.
+            r = rng.random((3, dim)).astype(np.float32)
+            mat = np.where(r < 1 / 6, -1.0, np.where(r < 1 / 3, 1.0, 0.0)).astype(np.float32)
+            mat *= np.sqrt(3.0)
+            cls._proj_matrix = mat
+        return cls._proj_matrix
+
     def _initial_position_for(self, embedding: np.ndarray) -> np.ndarray:
-        """Project a hypervector into 3D using fixed random projection.
+        """Project a hypervector into 3D, then rank-normalize against the
+        existing field so points fill the cube uniformly regardless of N.
 
-        Three orthogonal random directions in the embedding space define x/y/z
-        in the visualisation. Because the projection is fixed (seeded), the
-        same embedding always lands at the same coordinate — which is
-        important so the visualisation is deterministic and so similar
-        thoughts naturally appear near each other before any training.
-
-        Scaling note: for bipolar +/-1 vectors the dot product std is
-        sqrt(D), so we divide by ~sqrt(D)/3 to spread positions through most
-        of the [-1, 1] cube rather than clumping near origin.
+        Why rank-norm: with N=8 particles in a high-dimensional bipolar
+        space, all raw projections fall within ~1/3 of the cube and visually
+        clump. Rank-normalization maps each axis to its empirical CDF
+        percentile in the field, guaranteeing visual spread while still
+        preserving the property that semantic neighbours stay spatial
+        neighbours (rank order is preserved).
         """
-        proj = np.random.default_rng(2024).standard_normal((3, self.embedding_dim)).astype(
-            np.float32
-        )
-        proj /= np.linalg.norm(proj, axis=1, keepdims=True) + 1e-8
-        coord = proj @ embedding.astype(np.float32)
-        # Spread broadly: dividing by sqrt(D)/3 instead of sqrt(D)/2 means
-        # points cluster near +/- 0.6 instead of +/- 0.05.
-        coord = coord / (np.sqrt(self.embedding_dim) / 3.0)
-        return np.clip(coord, -1.0, 1.0).astype(np.float32)
+        proj = self._projection(self.embedding_dim)
+        raw = proj @ embedding.astype(np.float32)
+
+        # Combine with all currently-known particle raw projections, then
+        # convert each axis to a centered rank in [-1, 1].
+        if self._particles:
+            existing = np.stack(
+                [proj @ p.embedding.astype(np.float32) for p in self._particles.values()],
+                axis=0,
+            )
+            stacked = np.vstack([existing, raw[None, :]])
+        else:
+            stacked = raw[None, :]
+
+        # Per-axis rank percentile of the new point
+        out = np.zeros(3, dtype=np.float32)
+        for axis in range(3):
+            col = stacked[:, axis]
+            order = np.argsort(col)
+            ranks = np.empty_like(order)
+            ranks[order] = np.arange(len(col))
+            new_rank = ranks[-1]
+            n = len(col)
+            # Map to (-0.9, 0.9) so points have breathing room from the bounds
+            out[axis] = ((new_rank + 0.5) / n) * 1.8 - 0.9
+
+        # Tiny deterministic jitter so identical embeddings don't overlap
+        seed = int.from_bytes(embedding.tobytes()[:8], "big") % (2**32)
+        rng = np.random.default_rng(seed)
+        out += rng.normal(0.0, 0.02, size=3).astype(np.float32)
+        return out
