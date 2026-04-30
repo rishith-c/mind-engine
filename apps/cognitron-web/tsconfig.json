@@ -1,11 +1,21 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "plugins": [{ "name": "next" }],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@mind/physics": ["../../packages/shared-physics/src"]
-    }
+      "@/*": [
+        "./src/*"
+      ],
+      "@mind/physics": [
+        "../../packages/shared-physics/src"
+      ]
+    },
+    "allowJs": true,
+    "noEmit": true
   },
   "include": [
     "next-env.d.ts",
@@ -13,5 +23,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }

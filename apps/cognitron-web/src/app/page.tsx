@@ -1,12 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { Brain, Zap, RotateCcw, Sparkles, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ParticleField } from "@/components/particle-field";
 import { useCognitronStore } from "@/lib/store";
+
+// React Three Fiber + drei must be client-only. SSR will hit
+// "ReactCurrentOwner of undefined" because R3F reads React internals.
+const ParticleField = dynamic(
+  () => import("@/components/particle-field").then((m) => m.ParticleField),
+  { ssr: false, loading: () => <div className="h-full w-full" /> },
+);
 
 export default function CognitronPage() {
   const [thought, setThought] = useState("");

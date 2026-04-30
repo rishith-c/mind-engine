@@ -5,7 +5,7 @@ No pretrained models. No FAISS. No pgvector. Every operation built from primitiv
 
 from cognitron.hdc import HDCEncoder, bind, bundle, permute, hamming, cosine
 from cognitron.pnn import Particle, ParticleNetwork
-from cognitron.pgd import ParticleGradientDescent, SGDFallback
+from cognitron.pgd import ParticleGradientDescent, PGDConfig, SGDFallback, SGDConfig
 from cognitron.geometric_index import GeometricIndex
 
 __all__ = [
@@ -18,7 +18,9 @@ __all__ = [
     "Particle",
     "ParticleNetwork",
     "ParticleGradientDescent",
+    "PGDConfig",
     "SGDFallback",
+    "SGDConfig",
     "GeometricIndex",
 ]
 
