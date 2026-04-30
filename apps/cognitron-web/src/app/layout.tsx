@@ -9,8 +9,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
-      <body>{children}</body>
+    // suppressHydrationWarning on <html> + <body> tolerates attributes
+    // injected by browser extensions (Grammarly, Kapture, dark-mode hacks,
+    // etc.) which otherwise cause a hydration mismatch on first paint.
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }
