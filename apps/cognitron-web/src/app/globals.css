@@ -2,42 +2,170 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Cognitron design tokens.
+ * Dark-first, deep violet primary, plasma magenta accent. All shadcn tokens
+ * present so the canonical components don't reach into undefined CSS vars.
+ */
+
 @layer base {
   :root {
-    --background: 230 25% 5%;
+    --background: 232 30% 4%;
     --foreground: 210 40% 98%;
-    --primary: 280 90% 65%;
-    --primary-foreground: 210 40% 98%;
-    --muted: 230 20% 12%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 280 80% 50%;
-    --accent-foreground: 210 40% 98%;
-    --border: 230 25% 15%;
-    --input: 230 25% 15%;
-    --ring: 280 90% 65%;
+
+    --card: 232 30% 6%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 232 30% 7%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 282 88% 64%;
+    --primary-foreground: 232 30% 4%;
+
+    --secondary: 232 22% 11%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 232 22% 10%;
+    --muted-foreground: 215 18% 65%;
+
+    --accent: 196 90% 60%;
+    --accent-foreground: 232 30% 4%;
+
+    --destructive: 0 80% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 232 30% 14%;
+    --input: 232 30% 14%;
+    --ring: 282 88% 64%;
+
+    --radius: 0.75rem;
+
+    --aurora-1: 282 88% 64%;
+    --aurora-2: 196 90% 60%;
+    --aurora-3: 322 84% 64%;
   }
 
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground antialiased;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    @apply bg-background text-foreground antialiased selection:bg-primary/30 selection:text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1, "cv02" 1, "cv11" 1;
   }
-  html, body, #__next {
+
+  html, body {
     height: 100%;
     overflow: hidden;
+  }
+
+  /* Hide scrollbars on Webkit, keep functional */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
   }
 }
 
 @layer utilities {
+  /* Liquid glass — modern translucent surface with chromatic edge */
   .glass {
-    background: rgba(20, 14, 38, 0.55);
-    backdrop-filter: blur(18px) saturate(180%);
-    -webkit-backdrop-filter: blur(18px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(
+      135deg,
+      hsl(232 28% 9% / 0.72) 0%,
+      hsl(232 28% 6% / 0.62) 100%
+    );
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid hsl(0 0% 100% / 0.08);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.06),
+      0 24px 48px -16px hsl(232 30% 0% / 0.6),
+      0 0 0 1px hsl(0 0% 100% / 0.02);
   }
+
+  .glass-strong {
+    background: linear-gradient(
+      135deg,
+      hsl(232 28% 11% / 0.85) 0%,
+      hsl(232 28% 7% / 0.75) 100%
+    );
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    border: 1px solid hsl(0 0% 100% / 0.10);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.08),
+      0 32px 64px -20px hsl(232 30% 0% / 0.8);
+  }
+
+  /* Animated gradient border (advanced — uses background-clip + conic gradient) */
+  .gradient-border {
+    position: relative;
+    background-clip: padding-box;
+    border: 1px solid transparent;
+  }
+  .gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    margin: -1px;
+    border-radius: inherit;
+    background: conic-gradient(
+      from var(--angle, 0deg),
+      hsl(var(--aurora-1) / 0.6),
+      hsl(var(--aurora-2) / 0.6),
+      hsl(var(--aurora-3) / 0.6),
+      hsl(var(--aurora-1) / 0.6)
+    );
+    animation: rotate-border 8s linear infinite;
+  }
+
+  @property --angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+  }
+  @keyframes rotate-border {
+    to {
+      --angle: 360deg;
+    }
+  }
+
+  /* Glow text (used for hero) */
   .glow-text {
-    text-shadow: 0 0 20px rgba(180, 80, 255, 0.4);
+    text-shadow:
+      0 0 24px hsl(var(--aurora-1) / 0.4),
+      0 0 64px hsl(var(--aurora-1) / 0.2);
+  }
+
+  /* Aurora ambient glow behind hero */
+  .aurora {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(60% 40% at 20% 0%, hsl(var(--aurora-1) / 0.18) 0%, transparent 70%),
+      radial-gradient(50% 35% at 80% 10%, hsl(var(--aurora-2) / 0.14) 0%, transparent 70%),
+      radial-gradient(40% 30% at 50% 100%, hsl(var(--aurora-3) / 0.10) 0%, transparent 70%);
+    mix-blend-mode: screen;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Tabular numerics for stat displays */
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }
