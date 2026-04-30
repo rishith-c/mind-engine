@@ -1,11 +1,28 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "plugins": [{ "name": "next" }],
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "jsx": "preserve",
+    "allowJs": true,
+    "noEmit": true,
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@mind/physics": ["../../packages/shared-physics/src"]
-    }
+      "@mind/physics": ["../../packages/shared-physics/src"],
+      "@mind/physics/*": ["../../packages/shared-physics/src/*"]
+    },
+    "plugins": [{ "name": "next" }]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]

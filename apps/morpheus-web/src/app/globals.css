@@ -2,29 +2,110 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Morpheus — Editorial Scientific Instrument aesthetic.
+ * Same DNA as Cognitron, but the accent shifts to a warm amber to mark
+ * the *generative* (vs receptive) character of the system.
+ */
+
 @layer base {
   :root {
-    --background: 200 30% 4%;
-    --foreground: 195 30% 96%;
-    --primary: 195 90% 65%;
-    --primary-foreground: 195 30% 5%;
-    --muted: 200 30% 10%;
-    --muted-foreground: 195 15% 65%;
-    --border: 200 30% 14%;
-    --input: 200 30% 14%;
-    --ring: 195 90% 65%;
+    --background: 0 0% 3%;
+    --foreground: 40 10% 96%;
+
+    --card: 0 0% 5%;
+    --card-foreground: 40 10% 96%;
+
+    --popover: 0 0% 6%;
+    --popover-foreground: 40 10% 96%;
+
+    --primary: 40 10% 96%;
+    --primary-foreground: 0 0% 6%;
+
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 40 10% 96%;
+
+    --muted: 0 0% 8%;
+    --muted-foreground: 40 6% 56%;
+
+    --accent: 28 90% 64%;
+    --accent-foreground: 0 0% 6%;
+
+    --destructive: 8 78% 56%;
+    --destructive-foreground: 40 10% 96%;
+
+    --border: 40 8% 18% / 0.4;
+    --input: 40 8% 16%;
+    --ring: 28 90% 64%;
+
+    --radius: 0.25rem;
   }
-  * { @apply border-border; }
-  body { @apply bg-background text-foreground antialiased; }
-  html, body, #__next { height: 100%; overflow: hidden; }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-foreground/15;
+    font-feature-settings: "ss01" 1, "ss02" 1, "calt" 1;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(40 8% 18% / 0.6);
+  }
 }
 
 @layer utilities {
-  .glass {
-    background: rgba(8, 22, 32, 0.55);
-    backdrop-filter: blur(18px) saturate(180%);
-    -webkit-backdrop-filter: blur(18px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  .surface {
+    background: hsl(0 0% 6% / 0.78);
+    backdrop-filter: blur(28px) saturate(140%);
+    -webkit-backdrop-filter: blur(28px) saturate(140%);
+    border: 1px solid hsl(40 8% 22% / 0.45);
   }
-  .glow-text { text-shadow: 0 0 20px rgba(80, 200, 255, 0.5); }
+
+  .display {
+    font-family: var(--font-display, "Instrument Serif"), Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+
+  .mono {
+    font-family: var(--font-mono, "JetBrains Mono"), ui-monospace, monospace;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .graph-grid {
+    background-image:
+      linear-gradient(to right, hsl(40 8% 28% / 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(40 8% 28% / 0.04) 1px, transparent 1px);
+    background-size: 64px 64px;
+  }
+
+  .accent-glow {
+    background: radial-gradient(
+      55% 40% at 50% 55%,
+      hsl(28 90% 64% / 0.07) 0%,
+      transparent 70%
+    );
+  }
+
+  .micro {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: hsl(40 6% 56%);
+  }
 }
