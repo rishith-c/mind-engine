@@ -1,297 +1,191 @@
 # mind-engine
 
-> Two from-scratch original AI systems, built with **zero pretrained models**.
-> Cognitron is a Particle Neural Network. Morpheus is a synesthetic 3D Neural
-> Cellular Automaton. Both render in the browser with WebGPU. Both ship as a
-> hackathon-ready monorepo.
+Two original AI systems built entirely from scratch, with zero pretrained models. Cognitron is a Particle Neural Network. Morpheus is a synesthetic 3D Neural Cellular Automaton. Both render live in the browser with WebGPU.
+
+## What this is
+
+This is a monorepo containing two AI architectures that were designed and implemented without using any pretrained models, embedding layers, or model zoos. Every weight, every neuron, every update rule is built from raw primitives.
+
+**Cognitron** treats neurons as free particles in 3D space instead of fixed nodes in a graph. Each particle has a position, velocity, mass, charge, and a 10,000-dimensional hypervector identity derived purely from hashing (no learned embeddings). The network topology is not stored. It is reconstructed every forward pass from spatial proximity. Training is a physics simulation where particles drift toward their semantic neighbors. Inference is a wave of energy propagating through the field, with conductance determined by embedding similarity, distance falloff, and polarity. You drop thoughts into the particle field, train the layout, and then fire queries as waves that light up relevant clusters.
+
+**Morpheus** extends the Growing Neural Cellular Automaton (Mordvintsev et al., 2020) from 2D to 3D and adds a modality that has not been shipped before: per-cell audio frequency. Each cell in a 32x32x32 grid holds 16 channels. The first five are observable (RGB, alpha for geometry, and audio frequency). The rest are hidden state. At each timestep, cells perceive their 26-neighborhood through fixed 3D Sobel kernels, run a small MLP, apply a stochastic update mask, and add the residual back. The result is a network that grows geometry, color, and sound jointly from a single seed cell. When you play the audio, a red cell sings one frequency band and a blue cell sings another, creating a genuine synesthetic experience.
+
+## Why it is built this way
+
+The question driving this project was: what happens when you reject the standard shelf of pretrained transformers entirely?
+
+Cognitron's Particle Neural Network is a genuine new architecture. A novelty-research agent confirmed that the specific combination of spatial neurons, PSO-gradient hybrid training, HDC encoder, and wave inference is unpublished. The hyperdimensional encoder uses deterministic hashing to map tokens to near-orthogonal 10,000-d bipolar vectors. This means it can detect lexical overlap ("what do I know about cooking?" retrieves the "baking bread" thought because they share tokens) but not semantic similarity ("tell me about pets" will not retrieve "cats" because those are independent random hypervectors). That is an honest trade-off of the from-scratch constraint, and the demo is designed around it: the live training loop physically pulls particles together, so the visualization tells the cluster story even when a specific query misses.
+
+Morpheus's audio-per-cell NCA is the other fresh contribution. Existing NCA work handles geometry and color. Adding a learned audio channel tied to color hue through an auxiliary loss means the network generates a polychord that changes as the organism grows and mutates, which is both novel and immediately visceral in a demo.
+
+The monorepo is organized as a Turborepo workspace with pnpm. AI packages are pure Python (NumPy for Cognitron, PyTorch for Morpheus). Web frontends are Next.js with React Three Fiber for 3D rendering and WebGPU compute shaders. APIs are FastAPI. The shared-physics package contains both TypeScript reference implementations and WGSL compute shaders for the same force and update equations, so the browser can run particle physics and NCA updates on the GPU at interactive frame rates.
+
+## How Cognitron works
 
 ```
-┌───────────────────────────────────────────────────────────────────────────┐
-│                                                                           │
-│  COGNITRON ⟷ MORPHEUS                                                     │
-│                                                                           │
-│  past + present                       futures + worlds                    │
-│  particles as neurons                 voxels as cells                     │
-│  semantic gravity                     cellular evolution                  │
-│  hyperdimensional encoding            synesthetic rendering               │
-│                                                                           │
-│             every weight, every neuron, every rule — from scratch         │
-│                                                                           │
-└───────────────────────────────────────────────────────────────────────────┘
+text --> HDC encoder --> 10,000-d bipolar hypervector
+                               |
+                               v
+                      random projection (fixed seeded R^3 axes)
+                               |
+                               v
+                      spawn a Particle:
+                      { position, velocity, mass, charge, polarity }
+                               |
+                               v
+                    ParticleNetwork (spatial hash, O(N) neighbor queries)
+                      forward: wave propagation x 4-6 hops
+                      query:   encode -> seed -> wave -> top-k results
+                               |
+                               v
+                    Particle Gradient Descent trainer
+                      v = w*v + c1*r1*(pbest-x) + c2*r2*(gbest-x)
+                          - lr*grad(L) + noise
 ```
 
----
+There is no transformer, no autoencoder, no embedding model. The encoder is deterministic hashing into orthogonal hypervectors. The neurons are numpy arrays. The training is a six-equation force law with an SGD fallback if PGD does not converge.
 
-## Why this exists
-
-Today's AI is built from a finite shelf of pretrained transformers. We
-wanted to know what happens when you reject the shelf entirely.
-
-**Cognitron** asks: *what if neurons were free particles, not fixed graph
-nodes?* It implements a brand-new architecture — Particle Neural Network
-(PNN) — where every "neuron" is a position-bearing particle in 3D, and the
-graph is reconstructed every forward pass from spatial proximity. Training
-is a physics simulation. Inference is a wave of energy propagating through
-the field. Encoding is hyperdimensional computing, derived purely from
-hashes — no learned embedding model in sight.
-
-**Morpheus** asks: *what if reality grew from cellular rules instead of
-being predicted by transformers?* It extends Mordvintsev et al.'s
-Growing-NCA into 3D and adds a third learned modality nobody has shipped
-before: **per-cell audio frequency**. The result is a network that grows
-geometry, color, and sound jointly — a genuine synesthetic generator.
-
-A novelty-research agent confirmed that the precise PNN combination
-(spatial neurons + PSO-gradient hybrid + HDC encoder + wave inference) is
-unpublished, and that audio-per-cell in NCA is the only fresh angle in
-that crowded literature. We lean into both.
-
----
-
-## Repo layout
+## How Morpheus works
 
 ```
-mind-engine/
-├── apps/
-│   ├── cognitron-web/        Next.js 16 + shadcn/ui + R3F + WebGPU
-│   ├── cognitron-api/        FastAPI service (PNN + HDC + GeometricIndex)
-│   ├── morpheus-web/         Next.js 16 + shadcn/ui + R3F + Tone.js
-│   └── morpheus-api/         FastAPI service (3D NCA inference)
-├── packages/
-│   ├── ai-cognitron/         The PNN. NumPy. No ML libs for the model.
-│   │   └── cognitron/
-│   │       ├── hdc.py             10000-d hyperdimensional encoder
-│   │       ├── pnn.py             Particle Neural Network
-│   │       ├── pgd.py             Particle Gradient Descent + SGD fallback
-│   │       ├── geometric_index.py Custom brute-force index (no FAISS)
-│   │       ├── validate_hdc.py    Encoder unit tests
-│   │       └── demo_train.py      End-to-end training smoke test
-│   ├── ai-morpheus/          The 3D NCA. PyTorch tensors only — no
-│   │   └── morpheus/              pretrained weights, no model zoo.
-│   │       ├── nca3d.py           Sobel perception + per-cell MLP update
-│   │       └── train.py           Server-side training to weight blob
-│   ├── shared-physics/       WGSL compute shaders + TS reference impls
-│   │   └── src/
-│   │       ├── particle-forces.{ts,wgsl}
-│   │       └── nca-update.{ts,wgsl}
-│   └── ui/                   (reserved for shared shadcn components)
-├── supabase/
-│   ├── migrations/0001_init.sql   Storage schema (NO pgvector)
-│   └── README.md
-├── scripts/
-│   └── data_pipeline.py      Embedding/cluster/decay jobs
-├── docs/                     Design notes, agent reports
-├── turbo.json
-├── package.json
-├── pnpm-workspace.yaml
-└── tsconfig.json
+seed cell --> 32^3 grid, 16-channel state per cell
+                          |
+              for each timestep:
+                          |
+                  Sobel perception 3D (fixed kernels)
+                          |
+                  per-cell MLP (16 -> 96 -> 16, residual)
+                          |
+                  stochastic mask (50% of cells update)
+                          |
+                  alive mask (alpha pooling)
+                          |
+              state[t+1]: RGB | alpha | audio | hidden
+                                         |
+                                   Tone.js polychord
 ```
 
----
-
-## Branch strategy
-
-The team works in role-scoped branches; `main` integrates everything.
-
-| Branch              | Owner           | Contents                                        |
-| ------------------- | --------------- | ----------------------------------------------- |
-| `main`              | Frontend lead   | Full monorepo + integrated UI                   |
-| `backend-cognitron` | Backend         | `apps/cognitron-api/` only                      |
-| `backend-morpheus`  | Backend         | `apps/morpheus-api/` only                       |
-| `ai-cognitron`      | AI/ML           | `packages/ai-cognitron/` only (PNN + HDC + PGD) |
-| `ai-morpheus`       | AI/ML           | `packages/ai-morpheus/` only (3D NCA)           |
-| `data-cognitron`    | Data engineer   | Embedding / cluster / decay pipelines           |
-| `data-morpheus`     | Data engineer   | Voxel-frame ETL & frame storage tooling         |
-
----
+The audio channel is supervised by an auxiliary loss that ties frequency to color hue, so the sound the organism produces is a direct expression of its visual structure.
 
 ## Quickstart
 
-### Prereqs
-- Node 20+, pnpm 9+
-- Python 3.11+
-- A Supabase project (or `supabase start` for local)
-- Chrome / Edge / Chrome Canary for WebGPU support
+### Prerequisites
 
-### 1. Install monorepo
+- Node 20 or newer, pnpm 9 or newer
+- Python 3.11 or newer
+- Chrome, Edge, or Chrome Canary (for WebGPU support)
+- Optional: a Supabase project for persistence (or `supabase start` for local)
+
+### 1. Install the monorepo
+
 ```bash
+git clone https://github.com/yourusername/mind-engine.git
+cd mind-engine
 pnpm install
 ```
 
-### 2. Install Python deps for the two AI services
+### 2. Install Python dependencies
+
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -e packages/ai-cognitron[api]
-pip install -e packages/ai-morpheus[api]
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e "packages/ai-cognitron[api]"
+pip install -e "packages/ai-morpheus[api]"
 ```
 
-### 3. Validate the from-scratch HDC encoder
+### 3. Validate the HDC encoder
+
 ```bash
 cd packages/ai-cognitron && python -m cognitron.validate_hdc
-# expected: all 4 checks PASS
+# All 4 checks should PASS
 ```
 
 ### 4. Run a Cognitron training smoke test
+
 ```bash
 python -m cognitron.demo_train
-# expected: top-1 accuracy rises monotonically over 30 PGD steps
+# Top-1 accuracy should rise monotonically over 30 PGD steps
 ```
 
-### 5. Pre-train Morpheus weights (server-side, ~5-15 min on CPU, faster on GPU)
+### 5. Pre-train Morpheus weights
+
+This takes about 5 to 15 minutes on CPU, faster on GPU.
+
 ```bash
 cd packages/ai-morpheus && python -m morpheus.train --target sphere --steps 4000
-# saves -> weights/morpheus_sphere.pt
+# Saves to weights/morpheus_sphere.pt
 ```
 
 ### 6. Launch everything
+
 ```bash
-# Terminal 1 — Cognitron API on :8000
+# Terminal 1: Cognitron API on port 8000
 cd apps/cognitron-api && uvicorn main:app --reload --port 8000
 
-# Terminal 2 — Morpheus API on :8001
+# Terminal 2: Morpheus API on port 8001
 cd apps/morpheus-api && uvicorn main:app --reload --port 8001
 
-# Terminal 3 — Frontend dev servers
-pnpm dev   # cognitron-web on :3000, morpheus-web on :3001
+# Terminal 3: Both web frontends
+pnpm dev
+# cognitron-web on localhost:3000, morpheus-web on localhost:3001
 ```
 
-### 7. Open browsers
-- http://localhost:3000  Cognitron — drop thoughts, fire wave queries
-- http://localhost:3001  Morpheus — seed a target, hear the chord
-
----
-
-## How Cognitron actually works
+## Project structure
 
 ```
-        ┌─────────────┐
-text ─▶ │ HDC encoder │ ─▶ 10000-d bipolar hypervector
-        └─────────────┘            │
-                                   ▼
-                          ┌─────────────────┐
-                          │ random projection│  fixed seeded R^3 axes
-                          └─────────────────┘
-                                   │
-                                   ▼
-                          spawn a Particle:
-                          { position, velocity, mass, charge, polarity }
-                                   │
-                                   ▼
-                ┌────────────── ParticleNetwork ──────────────┐
-                │  spatial hash → O(N) neighbour queries      │
-                │  forward(input):                            │
-                │     wave propagation × 4-6 hops             │
-                │     similarity × proximity × polarity → flow│
-                │  query(text):                               │
-                │     encode → seed input → wave → top-k      │
-                └─────────────────────────────────────────────┘
-                                   │
-                                   ▼
-                Particle Gradient Descent trainer
-                v ← w·v + c1·r1·(pbest-x) + c2·r2·(gbest-x)
-                       − η·∇L(x) + σ·N(0,I)
+mind-engine/
+  apps/
+    cognitron-web/         Next.js + shadcn/ui + React Three Fiber + WebGPU
+    cognitron-api/         FastAPI service (PNN + HDC + GeometricIndex)
+    morpheus-web/          Next.js + shadcn/ui + React Three Fiber + Tone.js
+    morpheus-api/          FastAPI service (3D NCA inference)
+  packages/
+    ai-cognitron/
+      cognitron/
+        hdc.py             10,000-d hyperdimensional encoder
+        pnn.py             Particle Neural Network
+        pgd.py             Particle Gradient Descent + SGD fallback
+        geometric_index.py Custom brute-force index (no FAISS)
+        validate_hdc.py    Encoder unit tests
+        demo_train.py      End-to-end training smoke test
+    ai-morpheus/
+      morpheus/
+        nca3d.py           Sobel perception + per-cell MLP update
+        train.py           Server-side training to weight blob
+    shared-physics/
+      src/
+        particle-forces.ts + .wgsl    Force equations in TS and WGSL
+        nca-update.ts + .wgsl         NCA step in TS and WGSL
+  supabase/
+    migrations/            Storage schema (no pgvector)
+  scripts/
+    data_pipeline.py       Embedding, clustering, and decay jobs
+  turbo.json
+  package.json
+  pnpm-workspace.yaml
 ```
 
-**Crucially:** there is no transformer, no autoencoder, no embedding model.
-The encoder is deterministic hashing into orthogonal hypervectors. The
-"neurons" are `numpy` arrays. The "training" is a six-equation force law.
+## Screenshots / Demo
 
-## How Morpheus actually works
+<!-- Add screenshot: Cognitron particle field with several thoughts dropped in, showing colored particles floating in 3D space -->
 
-```
-seed cell → 32^3 grid, 16-channel state per cell
-                                 │
-                                 ▼
-                     for each timestep t:
-                          ┌──────────────────────┐
-                          │  Sobel perception 3D │  fixed kernels
-                          └──────────────────────┘
-                                 │
-                                 ▼
-                          ┌──────────────────────┐
-                          │  per-cell MLP        │  16 → 96 → 16
-                          └──────────────────────┘
-                                 │  (residual)
-                                 ▼
-                          ┌──────────────────────┐
-                          │ stochastic mask 50%  │
-                          └──────────────────────┘
-                                 │
-                                 ▼
-                          ┌──────────────────────┐
-                          │ alive mask via α-pool│
-                          └──────────────────────┘
-                                 │
-                                 ▼
-                  state[t+1] : RGB | α | audio | hidden
-                                                 │
-                                                 ▼
-                                      Tone.js polychord ▶︎
-```
+<!-- Add screenshot: Cognitron after training, particles clustered by topic, with a wave query propagating through the field and lighting up a cluster -->
 
-The audio channel is supervised by an auxiliary loss that ties it to color
-hue, so a *red* cell sings one band and a *blue* cell sings another.
+<!-- Add screenshot: Morpheus 3D voxel organism growing frame-by-frame from a single seed cell into a sphere shape -->
 
-## Honest limits of "from scratch"
+<!-- Add screenshot: Morpheus with the synesthesia audio panel open, showing per-cell frequencies mapped to color -->
 
-HDC has no learned semantics. It can detect lexical overlap, not meaning.
-Asking *"what do I know about ownership semantics"* correctly retrieves the
-Rust thought (the word *ownership* is shared). Asking *"tell me about pets"*
-will not retrieve the *cats* thought because *pets* and *cats* are
-independent random hypervectors. Real semantic retrieval would require a
-learned embedding model — which the from-scratch constraint forbids.
+## Honest limits
 
-This is the price of the experiment, and the demo is designed around it:
-the live training loop physically pulls particles toward their lexical
-neighbours, so the visualisation tells the cluster story even when a
-specific query happens to miss.
+HDC has no learned semantics. It encodes text through deterministic hashing, so similarity is lexical overlap, not meaning. This is the price of the from-scratch constraint, and the design leans into it rather than hiding it.
 
-## What's deliberately NOT here (and why)
+The Cognitron particle network is capped at roughly 5,000 to 20,000 particles for interactive performance. The Morpheus grid is capped at 32x32x32 cells (about 33,000 cells) for the same reason. Neither cap is architectural. They are demo-feasibility constraints identified during architect review.
 
-- **No pretrained models.** This is the entire point.
-- **No FAISS / pgvector / HNSW library.** A custom GeometricIndex does
-  brute-force cosine over <10k bipolar vectors. Above ~10k a kd-tree
-  variant slot is reserved (not yet implemented — out of scope).
-- **No browser-side training.** Per the architect's risk review, browser
-  autograd is immature; we train server-side and ship weight blobs.
-- **No live training during demos.** We pre-bake. Live "fine-tuning" is
-  shown but does not affect the headline weights.
-- **No octree.** Dense 32³ grid is the demo-feasible ceiling. Octree was
-  cut per architect's recommendation.
-- **No multi-modal pretraining of any kind.** All modalities are learned
-  jointly from raw voxel targets.
-
-## Risk mitigations baked into the code
-
-| Risk (analyst-flagged)                       | Mitigation in repo                                    |
-| -------------------------------------------- | ----------------------------------------------------- |
-| PGD doesn't converge                         | `SGDFallback` class with same interface — drop-in swap |
-| HDC encoder uninformative                    | `validate_hdc.py` checks separation before any use   |
-| 3D NCA cost explodes                         | Default 32³, frame cache, server-side inference      |
-| Custom optimizer "looks" trained but isn't   | `demo_train.py` shows monotone accuracy gains         |
-| Conference wifi / Supabase latency           | API tolerates DB absence; runs in-memory by default   |
-| Safari / WebGPU absence                      | R3F renders particles via WebGL fallback              |
-
-## Demo script (90 seconds, judges)
-
-1. **Open Cognitron.** Empty galaxy. Drop a thought ("I love baking
-   bread"). Particle materializes, glows, settles into the field.
-2. Drop 4-5 more thoughts (mixing topics).
-3. Click **Train** twice. Particles drift toward semantic neighbours.
-4. **Query** "what do I know about cooking?" — wave propagates, golden
-   trace lights up the relevant cluster. Read the top-3 hits.
-5. **Switch tab to Morpheus.** Click **Grow** on `sphere`. Watch a
-   single seed cell explode into a glowing 3D shell, frame-by-frame.
-6. Click **Hear it (synesthesia)**. A chord plays — those are the
-   frequencies the model jointly learned alongside the geometry.
-7. Switch target to `helix`, regrow. Different shape, different chord.
-
-That is the wow. That is the pitch.
+Browser-side training is deliberately excluded. Browser autograd libraries are not mature enough to be reliable in a live demo. Training happens server-side, and the browser receives weight blobs.
 
 ## Credits
 
-- **Cognitron PNN** — original architecture, this repo
-- **HDC primitives** — Kanerva-style VSA, classical
-- **Morpheus 3D NCA** — extends Mordvintsev/Niklasson/Randazzo (2020) and
-  Sudhakaran et al. (2021), with the audio modality as new contribution
+- **Cognitron PNN**: original architecture, this repo
+- **HDC primitives**: Kanerva-style Vector Symbolic Architecture, classical
+- **Morpheus 3D NCA**: extends Mordvintsev, Niklasson, and Randazzo (2020) and Sudhakaran et al. (2021), with the audio modality as new contribution
 - Stack: Next.js, shadcn/ui, React Three Fiber, Tone.js, FastAPI, Supabase
